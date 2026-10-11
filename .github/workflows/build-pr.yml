@@ -14,6 +14,8 @@ name: Build changed packages
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [ci/omasheet-x86-test]
   workflow_dispatch:
     inputs:
       packages:
@@ -94,8 +96,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [[ -n "${{ github.event.inputs.packages }}" ]]; then
-            names="${{ github.event.inputs.packages }}"
+          if [[ -n "${{ github.event.inputs.packages || 'omasheet' }}" ]]; then
+            names="${{ github.event.inputs.packages || 'omasheet' }}"
           else
             # The PR's own files, as GitHub lists them against the merge base.
             # A two-dot diff against the current base tip also counted every
@@ -149,7 +151,7 @@ jobs:
           fi
       - id: gate
         env:
-          STATUS: ${{ github.event_name == 'workflow_dispatch' && 'dispatch' || steps.vouch.outputs.status }}
+          STATUS: ${{ github.event_name != 'pull_request' && 'dispatch' || steps.vouch.outputs.status }}
           AUTHOR: ${{ github.event.pull_request.user.login }}
           APPROVED: ${{ steps.approval.outputs.approved || 'false' }}
           PLANNED: ${{ steps.list.outputs.planned }}
